@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>1</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root { --bg:#fff; --accent:#000; --gray:#f8f8f8; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:0 0 100px; background:var(--bg); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; overflow-x:hidden; touch-action:pan-y; }
+    html,body { overscroll-behavior-x:none; }
+    .banner { height:200px; background:linear-gradient(135deg,#ffb300,#ff8c00); color:white; display:flex; align-items:center; justify-content:center; font-size:34px; font-weight:900; text-align:center; padding:20px; }
+    .categories { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:20px; }
+    .cat-card { background:white; border-radius:20px; overflow:hidden; box-shadow:0 8px 25px rgba(0,0,0,0.1); transition:transform .2s; }
+    .cat-card:active { transform:scale(0.96); }
+    .cat-img { width:100%; height:120px; object-fit:cover; }
+    .cat-title { padding:14px; text-align:center; font-weight:800; font-size:16px; }
+    .products { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:20px; }
+    .product-card { background:white; border-radius:20px; overflow:hidden; box-shadow:0 6px 20px rgba(0,0,0,0.08); }
+    .product-img { width:100%; height:160px; object-fit:cover; }
+    .product-info { padding:14px; }
+    .product-name { font-weight:800; font-size:15px; margin-bottom:6px; }
+    .product-price { font-size:18px; font-weight:900; color:var(--accent); }
+    .add-btn { width:100%; padding:13px; background:var(--accent); color:white; border:none; border-radius:12px; font-weight:bold; margin-top:10px; font-size:16px; }
+
+    /* Корзина FAB */
+    .cart-fab { position:fixed; right:20px; bottom:20px; background:var(--accent); color:white; width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:32px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:1000; opacity:0; transform:scale(0); transition:all .3s; }
+    .cart-fab.show { opacity:1; transform:scale(1); }
+    .cart-fab span { position:absolute; top:6px; right:6px; background:#ff3b30; color:white; font-size:12px; min-width:20px; height:20px; border-radius:10px; padding:0 6px; font-weight:bold; display:flex; align-items:center; justify-content:center; }
+
+    /* Admin FAB */
+    .admin-fab { position:fixed; left:20px; bottom:20px; background:#222; color:white; width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:1000; cursor:pointer; }
+
+    /* Модальные окна */
+    .modal, .cart-modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:flex-end; z-index:1000; }
+    .modal.show, .cart-modal.show { display:flex; }
+    .modal-content, .cart-content { background:white; width:100%; max-height:90dvh; border-radius:24px 24px 0 0; padding:20px; overflow-y:auto; }
+
+    /* Элементы корзины */
+    .cart-item { display:flex; align-items:center; justify-content:space-between; background:#f9f9f9; padding:16px; border-radius:16px; margin:12px 0; gap:12px; }
+    .cart-item-info { flex:1; }
+    .cart-item-name { font-weight:800; font-size:16px; }
+    .cart-item-variant { font-size:14px; color:#666; margin-top:2px; }
+    .qty-controls { display:flex; align-items:center; justify-content:center; gap:16px; background:white; padding:6px 16px; border-radius:30px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+    .qty-btn { width:40px; height:40px; background:#000; color:white; border:none; border-radius:50%; font-size:22px; font-weight:bold; display:flex; align-items:center; justify-content:center; }
+    .qty { min-width:44px; text-align:center; font-weight:bold; font-size:18px; }
+    .cart-item-price { font-weight:900; font-size:18px; min-width:90px; text-align:right; }
+
+    input, select { width:100%; padding:16px; margin:10px 0; border:1px solid #ddd; border-radius:16px; font-size:16px; }
+    .pay-btn { background:var(--accent); color:white; padding:18px; border:none; border-radius:16px; font-size:18px; font-weight:bold; margin-top:20px; width:100%; }
+    .variant-btn { padding:12px 20px; background:#f0f0f0; border-radius:16px; margin:6px; display:inline-block; cursor:pointer; }
+    .variant-btn.active { background:var(--accent); color:white; }
+
+    /* Admin modal */
+    .admin-modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:flex-end; z-index:1000; }
+    .admin-modal.show { display:flex; }
+    .admin-content { background:white; width:100%; max-height:90dvh; border-radius:24px 24px 0 0; padding:20px; overflow-y:auto; }
+    #adminJson { width:100%; height:260px; border:1px solid #ddd; border-radius:12px; padding:12px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13px; }
+  </style>
+</head>
+<body>
+
+<div class="banner"><span id="bannerTitle">НЕФТЬ</span><br><small id="bannerSubtitle" style="font-size:18px;opacity:0.9;">Самовывоз • Доставка по городу</small></div>
+
+<div class="categories" id="mainCategories"></div>
+<div id="productList" style="display:none;"></div>
+<div id="productDetail" style="display:none;"></div>
+
+<!-- Корзина FAB -->
+<div class="cart-fab" id="cartFab"><span id="cartCount">0</span></div>
+<!-- Admin FAB (visible for admins) -->
+<div class="admin-fab" id="adminFab" style="display:none;">⚙️</div>
+
+<!-- Корзина -->
+<div class="cart-modal" id="cartModal">
+  <div class="cart-content">
+    <h2 style="text-align:center;margin-bottom:20px;">Корзина</h2>
+    <div id="cartItems"></div>
+    <h3 style="margin:20px 0 10px;font-size:20px;" id="totalSum">Итого: 0 ₽</h3>
+
+    <h3>Способ оплаты</h3>
+    <select id="payment">
+      <option>Наличными при получении</option>
+      <option>Картой курьеру</option>
+      <option>Переводом на карту</option>
+    </select>
+
+    <h3>Доставка</h3>
+    <select id="delivery" onchange="updateTotal()">
+      <option>Самовывоз (бесплатно)</option>
+      <option>Доставка по городу — 150 ₽</option>
+    </select>
+
+    <h3>Ваши данные</h3>
+    <input type="text" id="name" placeholder="Имя" required>
+    <input type="tel" id="phone" placeholder="Телефон" required>
+    <input type="text" id="address" placeholder="Адрес (если доставка)">
+
+    <button class="pay-btn" onclick="submitOrder()">Оформить заказ</button>
+    <button onclick="document.getElementById('cartModal').classList.remove('show')" style="margin-top:10px;padding:16px;background:#f0f0f0;border:none;border-radius:16px;width:100%;">Назад</button>
+  </div>
+</div>
+
+<!-- Админ панель -->
+<div class="admin-modal" id="adminModal">
+  <div class="admin-content">
+    <h2 style="text-align:center;margin-bottom:14px;">Админ: каталог и настройки</h2>
+
+    <div style="background:#f7f7f7;padding:14px;border-radius:16px;margin-bottom:16px;">
+      <h3 style="margin:0 0 10px;">Настройки приложения</h3>
+      <input id="appTitleInput" type="text" placeholder="Заголовок (title)" />
+      <input id="appSubtitleInput" type="text" placeholder="Подзаголовок (баннер)" />
+      <button id="adminSaveSettingsBtn" class="pay-btn" style="margin-top:6px;">Сохранить настройки</button>
+    </div>
+
+    <h3 style="margin:10px 0;">Редактор каталога (JSON)</h3>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+      <button id="adminLoadCurrentBtn" style="padding:10px 14px;border:none;border-radius:12px;background:#eee;">Загрузить текущий</button>
+      <label style="padding:10px 14px;border:none;border-radius:12px;background:#eee;cursor:pointer;">
+        Импорт JSON <input id="adminImportFile" type="file" accept="application/json" style="display:none;">
+      </label>
+      <button id="adminApplyBtn" class="pay-btn" style="flex:1; margin:0;">Применить</button>
+      <button id="adminExportBtn" style="padding:10px 14px;border:none;border-radius:12px;background:#eee;">Экспорт JSON</button>
+      <button id="adminSaveServerBtn" class="pay-btn" style="background:#007bff;">Сохранить на сервер</button>
+    </div>
+    <textarea id="adminJson" placeholder='{"categories":[...]}'></textarea>
+
+    <button onclick="document.getElementById('adminModal').classList.remove('show')" style="margin-top:10px;padding:16px;background:#f0f0f0;border:none;border-radius:16px;width:100%;">Закрыть</button>
+  </div>
+</div>
+
+<!-- Выбор вкуса -->
+<div class="modal" id="variantModal">
+  <div class="modal-content">
+    <h3 style="text-align:center;">Выберите вкус</h3>
+    <div id="variantsList" style="display:flex;flex-wrap:wrap;justify-content:center;margin:20px 0;"></div>
+    <button onclick="closeVariant()" style="margin-top:10px;padding:16px;background:#000;color:white;border:none;border-radius:16px;width:100%;">Отмена</button>
+  </div>
+</div>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.ready(); tg.expand();
+
+  let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  let currentProduct = null;
+  let categories = null;
+  const ADMIN_IDS = []; // Укажите Telegram user id админа, например: [123456789]
+  const isAdmin = (() => {
+    try {
+      const uid = tg?.initDataUnsafe?.user?.id;
+      const byId = Array.isArray(ADMIN_IDS) && ADMIN_IDS.includes(uid);
+      return Boolean(byId);
+    } catch(e) {
+      return false;
+    }
+  })();
+
+  async function loadCatalog() {
+    try {
+      const res = await fetch('catalog.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const mapped = {};
+      for (const cat of data.categories ?? []) {
+        const title = (cat.title || cat.id || 'Категория').toString();
+        mapped[title] = (cat.items || []).map(i => ({
+          name: i.name,
+          price: i.price,
+          img: i.image,
+          variants: i.variants
+        }));
+      }
+      return mapped;
+    } catch (e) {
+      console.warn('catalog.json не загружен, используем вшитый каталог', e);
+      return {
+        "Лимонады": [
+          {name:"Классический лимонад", price:250, img:"https://images.unsplash.com/photo-1621263763925-5ec46e1c0638?w=800", variants:["Малина","Груша","Тархун","Лимон-мята"]},
+          {name:"Мохито безалкогольный", price:290, img:"https://images.unsplash.com/photo-1546171753-9266432d1e5e?w=800", variants:["Классический","Клубничный"]},
+        ],
+        "Милкшейки": [
+          {name:"Милкшейк", price:320, img:"https://images.unsplash.com/photo-1577805947697-89e18249dcdb95d7a48?w=800", variants:["Ваниль","Шоколад","Клубника","Сникерс","Орео"]}
+        ],
+        "Хот-доги": [
+          {name:"Классический хот-дог", price:280, img:"https://images.unsplash.com/photo-1607013251379-e6fce7bae579?w=800", variants:["Стандарт","С сыром","Острый"]},
+          {name:"Корн-дог", price:250, img:"https://images.unsplash.com/photo-1565299507175-7b1e67ea4031?w=800", variants:["Классика"]}
+        ],
+        "Закуски": [
+          {name:"Картошка фри", price:190, img:"https://images.unsplash.com/photo-1573083295379-7dcdb95d7a48?w=800", variants:["Маленькая","Средняя","Большая"]}
+        ],
+        "Десерты": [
+          {name:"Мороженое", price:150, img:"https://images.unsplash.com/photo-1563805042-7684c7f057f3?w=800", variants:["Ванильное","Шоколадное"]}
+        ]
+      };
+    }
+  }
+
+  function slugify(str) {
+    return (str || '').toString().toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .slice(0, 60);
+  }
+
+  function buildCatalogJsonFromCategories() {
+    const out = { categories: [] };
+    const catTitles = Object.keys(categories || {});
+    for (const title of catTitles) {
+      const items = categories[title] || [];
+      out.categories.push({
+        id: slugify(title),
+        title,
+        image: (items[0] && items[0].img) || "",
+        items: items.map(i => ({
+          id: slugify(i.name),
+          name: i.name,
+          price: i.price,
+          image: i.img,
+          variants: i.variants || []
+        }))
+      });
+    }
+    return out;
+  }
+
+  function applyCatalogJsonText(text) {
+    const data = JSON.parse(text);
+    const mapped = {};
+    for (const cat of data.categories ?? []) {
+      const title = (cat.title || cat.id || 'Категория').toString();
+      mapped[title] = (cat.items || []).map(i => ({
+        name: i.name,
+        price: i.price,
+        img: i.image,
+        variants: i.variants
+      }));
+    }
+    categories = mapped;
+    localStorage.setItem('catalogJson', JSON.stringify(data));
+    renderMain();
+    backToMain();
+  }
+
+  function applyAppSettings() {
+    const t = localStorage.getItem('appTitle') || 'НЕФТЬ';
+    const s = localStorage.getItem('appSubtitle') || 'Самовывоз • Доставка по городу';
+    document.title = t;
+    const titleEl = document.getElementById('bannerTitle');
+    const subEl = document.getElementById('bannerSubtitle');
+    if (titleEl) titleEl.textContent = t;
+    if (subEl) subEl.textContent = s;
+  }
+
+  (async () => {
+    categories = await loadCatalog();
+    // Если ранее применяли изменения через админку — загрузим их
+    try {
+      const saved = localStorage.getItem('catalogJson');
+      if (saved) {
+        applyCatalogJsonText(saved);
+      }
+    } catch(e) {}
+    applyAppSettings();
+    renderMain();
+    updateCart();
+    if (isAdmin) {
+      document.getElementById('adminFab').style.display = 'flex';
+    }
+  })();
+
+  function renderMain() {
+    document.getElementById('mainCategories').innerHTML = Object.keys(categories).map(cat => `
+      <div class="cat-card" onclick="openCategory('${cat}')">
+        <img src="${categories[cat][0].img}" class="cat-img">
+        <div class="cat-title">${cat}</div>
+      </div>
+    `).join('');
+  }
+
+  function openCategory(cat) {
+    document.getElementById('mainCategories').style.display = 'none';
+    document.getElementById('productList').style.display = 'block';
+    document.getElementById('productList').innerHTML = `
+      <h2 style="padding:20px 20px 0;text-align:center;font-weight:900;font-size:28px;">${cat}</h2>
+      <div class="products">${categories[cat].map((p,i) => `
+        <div class="product-card">
+          <img src="${p.img}" class="product-img" onclick="openDetail('${cat}',${i})">
+          <div class="product-info">
+            <div class="product-name" onclick="openDetail('${cat}',${i})">${p.name}</div>
+            <div class="product-price">${p.price} ₽</div>
+            <button class="add-btn" onclick="selectVariant('${cat}',${i})">Добавить</button>
+          </div>
+        </div>
+      `).join('')}</div>
+      <button onclick="backToMain()" style="margin:20px;padding:16px;background:#000;color:white;border:none;border-radius:16px;width:calc(100%-40px);font-weight:bold;">На главную</button>`;
+  }
+
+  function backToMain() {
+    document.getElementById('productList').style.display = 'none';
+    document.getElementById('productDetail').style.display = 'none';
+    document.getElementById('mainCategories').style.display = 'grid';
+  }
+
+  function openDetail(cat, idx) {
+    const p = categories[cat][idx];
+    document.getElementById('productDetail').style.display = 'block';
+    document.getElementById('productList').style.display = 'none';
+    document.getElementById('productDetail').innerHTML = `
+      <div style="padding:20px;">
+        <img src="${p.img}" style="width:100%;border-radius:20px;margin-bottom:20px;">
+        <h2>${p.name}</h2>
+        <p style="font-size:28px;font-weight:900;color:#000;margin:20px 0;">${p.price} ₽</p>
+        ${p.variants ? `<p><strong>Вкусы:</strong> ${p.variants.join(', ')}</p>` : ''}
+        <button class="add-btn" onclick="selectVariant('${cat}',${idx})" style="padding:18px;font-size:20px;">Добавить в корзину</button>
+        <button onclick="backToMain()" style="margin-top:10px;padding:16px;background:#f0f0f0;border:none;border-radius:16px;width:100%;">Назад</button>
+      </div>`;
+  }
+
+  function selectVariant(cat, idx) {
+    currentProduct = {cat, idx};
+    const p = categories[cat][idx];
+    if (p.variants && p.variants.length > 1) {
+      document.getElementById('variantsList').innerHTML = p.variants.map(v => `
+        <div class="variant-btn" onclick="addToCart('${v}')">${v}</div>
+      `).join('');
+      document.getElementById('variantModal').classList.add('show');
+    } else {
+      addToCart(p.variants ? p.variants[0] : "Стандарт");
+    }
+  }
+
+  function addToCart(variant) {
+    const p = categories[currentProduct.cat][currentProduct.idx];
+    const existing = cart.find(i => i.name === p.name && i.variant === variant);
+    if (existing) existing.qty += 1;
+    else cart.push({name: p.name, variant, price: p.price, qty: 1});
+    localStorage.setItem('cart', JSON.stringify(cart));
+    updateCart();
+    closeVariant();
+    tg.HapticFeedback.impactOccurred('medium');
+  }
+
+  function closeVariant() {
+    document.getElementById('variantModal').classList.remove('show');
+  }
+
+  // === Корзина ===
+  function renderCartItems() {
+    const container = document.getElementById('cartItems');
+    if (cart.length === 0) {
+      container.innerHTML = '<p style="text-align:center;color:#999;padding:40px 0;">Корзина пуста</p>';
+      return;
+    }
+    container.innerHTML = cart.map((item, idx) => `
+      <div class="cart-item">
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-variant">${item.variant}</div>
+        </div>
+        <div class="qty-controls">
+          <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
+          <div class="qty">${item.qty}</div>
+          <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
+        </div>
+        <div class="cart-item-price">${item.price * item.qty} ₽</div>
+      </div>
+    `).join('');
+    updateTotal();
+  }
+
+  function changeQty(idx, delta) {
+    if (cart[idx].qty + delta <= 0) cart.splice(idx, 1);
+    else cart[idx].qty += delta;
+    localStorage.setItem('cart', JSON.stringify(cart));
+    renderCartItems();
+    updateCart();
+  }
+
+  function updateTotal() {
+    const deliveryCost = document.getElementById('delivery')?.value.includes('Доставка') ? 150 : 0;
+    const total = cart.reduce((s,i) => s + i.price * i.qty, 0) + deliveryCost;
+    document.getElementById('totalSum').textContent = `Итого: ${total} ₽`;
+  }
+
+  function updateCart() {
+    const count = cart.reduce((s,i) => s + i.qty, 0);
+    document.getElementById('cartCount').textContent = count > 99 ? '99+' : count;
+    document.getElementById('cartFab').classList.toggle('show', count > 0);
+  }
+
+  document.getElementById('cartFab').onclick = () => {
+    if (cart.length === 0) return;
+    renderCartItems();
+    document.getElementById('cartModal').classList.add('show');
+  };
+
+  function submitOrder() {
+    const name = document.getElementById('name').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const payment = document.getElementById('payment').value;
+    const delivery = document.getElementById('delivery').value;
+
+    if (!name || !phone) {
+      tg.showPopup({title:"Ошибка", message:"Укажите имя и телефон", buttons:[{type:'ok'}]});
+      return;
+    }
+
+    const deliveryCost = delivery.includes('Доставка') ? 150 : 0;
+    const total = cart.reduce((s,i)=>s+i.price*i.qty,0) + deliveryCost;
+
+    const order = {action:"order", cart, total, name, phone, address:delivery.includes('Самовывоз')?"Самовывоз":address, payment, delivery};
+    tg.sendData(JSON.stringify(order));
+
+    tg.showPopup({title:"Спасибо!", message:"Заказ принят! Скоро свяжемся"}, () => {
+      cart = []; localStorage.setItem('cart','[]');
+      updateCart();
+      document.getElementById('cartModal').classList.remove('show');
+      tg.close();
+    });
+  }
+
+  // === Админка ===
+  document.getElementById('adminFab').onclick = () => {
+    const area = document.getElementById('adminJson');
+    const current = buildCatalogJsonFromCategories();
+    area.value = JSON.stringify(current, null, 2);
+    // settings
+    document.getElementById('appTitleInput').value = localStorage.getItem('appTitle') || 'НЕФТЬ';
+    document.getElementById('appSubtitleInput').value = localStorage.getItem('appSubtitle') || 'Самовывоз • Доставка по городу';
+    document.getElementById('adminModal').classList.add('show');
+  };
+
+  document.getElementById('adminLoadCurrentBtn').onclick = () => {
+    const current = buildCatalogJsonFromCategories();
+    document.getElementById('adminJson').value = JSON.stringify(current, null, 2);
+  };
+
+  document.getElementById('adminApplyBtn').onclick = () => {
+    try {
+      const text = document.getElementById('adminJson').value;
+      applyCatalogJsonText(text);
+      tg.HapticFeedback.impactOccurred('medium');
+      tg.showPopup?.({ title: "OK", message: "Каталог применён локально. Экспортируйте catalog.json для сервера.", buttons:[{type:'ok'}] });
+    } catch(e) {
+      tg.showPopup?.({ title: "Ошибка", message: "Неверный JSON", buttons:[{type:'ok'}] });
+    }
+  };
+
+  document.getElementById('adminExportBtn').onclick = () => {
+    const text = document.getElementById('adminJson').value || JSON.stringify(buildCatalogJsonFromCategories(), null, 2);
+    const blob = new Blob([text], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'catalog.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  document.getElementById('adminImportFile').addEventListener('change', (ev) => {
+    const file = ev.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      document.getElementById('adminJson').value = String(reader.result || '');
+    };
+    reader.readAsText(file, 'utf-8');
+    ev.target.value = '';
+  });
+
+  document.getElementById('adminSaveSettingsBtn').onclick = () => {
+    const t = document.getElementById('appTitleInput').value.trim() || 'НЕФТЬ';
+    const s = document.getElementById('appSubtitleInput').value.trim() || 'Самовывоз • Доставка по городу';
+    localStorage.setItem('appTitle', t);
+    localStorage.setItem('appSubtitle', s);
+    applyAppSettings();
+    tg.HapticFeedback.impactOccurred('light');
+  };
+
+  document.getElementById('adminSaveServerBtn').onclick = () => {
+    try {
+      const text = document.getElementById('adminJson').value || JSON.stringify(buildCatalogJsonFromCategories(), null, 2);
+      const parsed = JSON.parse(text);
+      // Минифицируем, чтобы уменьшить payload
+      const min = JSON.stringify({ action: "catalog_update", catalog: parsed });
+      if (min.length > 4000) {
+        tg.showPopup?.({ title:"Слишком большой JSON", message:"Уменьшите каталог перед отправкой", buttons:[{type:'ok'}] });
+        return;
+      }
+      tg.sendData(min);
+      tg.showPopup?.({ title:"Отправлено", message:"Запрос на обновление отправлен боту", buttons:[{type:'ok'}] });
+    } catch(e) {
+      tg.showPopup?.({ title:"Ошибка", message:"Неверный JSON", buttons:[{type:'ok'}] });
+    }
+  };
+
+  // Инициализация происходит после загрузки каталога (см. выше)
+</script>
+</body>
+</html>
