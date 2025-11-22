@@ -6,9 +6,15 @@ import os
 from pathlib import Path
 from typing import Final, List, Mapping, Sequence
 
-from telegram import KeyboardButton, ReplyKeyboardMarkup, Update, WebAppInfo
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
 from telegram.constants import ParseMode
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s | %(message)s",
@@ -32,25 +38,29 @@ WELCOME_MESSAGE: Final = (
     "Если не открывается, обновите Telegram."
 )
 
-keyboard_markup = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(BUTTON_TEXT, web_app=WebAppInfo(url=WEBAPP_URL))]
-    ],
-    resize_keyboard=True,
-    one_time_keyboard=False,
-    input_field_placeholder="Открой мини‑приложение 👇",
+inline_markup = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(
+                text=BUTTON_TEXT,
+                web_app=WebAppInfo(url=WEBAPP_URL),
+            )
+        ]
+    ]
 )
 
 
 async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Отправляет приветственный текст и клавиатуру."""
+    """Отправляет приветственный текст и inline‑кнопку."""
     if update.effective_chat:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=WELCOME_MESSAGE,
-            reply_markup=keyboard_markup,
+            reply_markup=inline_markup,
         )
-        logger.info("Приветственное сообщение отправлено в чат %s", update.effective_chat.id)
+        logger.info(
+            "Приветственное сообщение отправлено в чат %s", update.effective_chat.id
+        )
 
 
 async def on_command_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -133,7 +143,7 @@ async def _handle_order(
 
     await update.effective_message.reply_text(
         "Спасибо! Заказ получили и скоро свяжемся.",
-        reply_markup=keyboard_markup,
+        reply_markup=inline_markup,
     )
 
 
@@ -158,7 +168,7 @@ async def _handle_catalog_update(
 
     await update.effective_message.reply_text(
         f"Каталог обновлён и сохранён в {CATALOG_FILE}",
-        reply_markup=keyboard_markup,
+        reply_markup=inline_markup,
     )
 
 
