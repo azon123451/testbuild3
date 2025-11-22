@@ -21,7 +21,7 @@ BOT_TOKEN: Final = os.environ.get(
 )
 WEBAPP_URL: Final = os.environ.get(
     "WEBAPP_URL",
-    "https://example.com/path/to/your/webapp/index.html",  # поменяйте на адрес мини‑приложения
+    "https://azon123451.github.io/testbuild4/",  # GitHub Pages с mini app
 )
 ADMIN_CHAT_ID_RAW = os.environ.get("ADMIN_CHAT_ID")
 ADMIN_CHAT_ID: Final[int | None] = int(ADMIN_CHAT_ID_RAW) if ADMIN_CHAT_ID_RAW else None
