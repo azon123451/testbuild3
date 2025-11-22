@@ -26,7 +26,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN: Final = os.environ.get("8346882502:AAG2NZrnV6poZOx9lK3hbEUfUn75vAS1Xgo")
+BOT_TOKEN: Final = os.environ.get("8047115088:AAGnS5O4O5NzWz5c7BUgpI2LnkDq4XXbit4")
 BUTTON_TEXT: Final = "Старт"
 WELCOME_MESSAGE: Final = (
     "Привет! 👋\n"
@@ -87,4 +87,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
