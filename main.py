@@ -27,7 +27,7 @@ BOT_TOKEN: Final = os.environ.get(
 )
 WEBAPP_URL: Final = os.environ.get(
     "WEBAPP_URL",
-    "https://azon123451.github.io/testbuild4/",  # GitHub Pages с mini app
+    "https://azon123451.github.io/testbuild5/",  # GitHub Pages с mini app
 )
 ADMIN_CHAT_IDS_ENV = os.environ.get("ADMIN_CHAT_IDS")
 ADMIN_CHAT_IDS: Final[List[int]] = (
