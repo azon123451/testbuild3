@@ -198,26 +198,36 @@ async def _handle_catalog_export(
     file_buffer = io.BytesIO(json_bytes)
     file_buffer.name = "catalog.json"
 
-    if not update.effective_chat:
-        return
+    targets: List[int] = []
+    if update.effective_chat:
+        targets.append(update.effective_chat.id)
+    for admin_id in ADMIN_CHAT_IDS:
+        if admin_id not in targets:
+            targets.append(admin_id)
 
-    try:
-        await context.bot.send_document(
-            chat_id=update.effective_chat.id,
-            document=file_buffer,
-            filename="catalog.json",
-            caption="Экспорт каталога",
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.error("Не удалось отправить экспорт каталога: %s", exc)
+    send_errors = False
+    for chat_id in targets:
+        try:
+            file_buffer.seek(0)
+            await context.bot.send_document(
+                chat_id=chat_id,
+                document=file_buffer,
+                filename="catalog.json",
+                caption="Экспорт каталога",
+            )
+        except Exception as exc:  # noqa: BLE001
+            send_errors = True
+            logger.error("Не удалось отправить экспорт каталога в %s: %s", chat_id, exc)
+
+    if send_errors:
         await update.effective_message.reply_text(
-            "Не удалось отправить файл.", reply_markup=inline_markup
+            "Файл отправлен не всем адресатам. Проверьте логи бота.",
+            reply_markup=inline_markup,
         )
-        return
-
-    await update.effective_message.reply_text(
-        "Каталог отправлен файлом 📁", reply_markup=inline_markup
-    )
+    else:
+        await update.effective_message.reply_text(
+            "Каталог отправлен файлом 📁", reply_markup=inline_markup
+        )
 
 
 def main() -> None:
