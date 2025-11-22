@@ -1,0 +1,89 @@
+{
+  "categories": [
+    {
+      "id": "lemonades",
+      "title": "Лимонады",
+      "image": "https://images.unsplash.com/photo-1621263763925-5ec46e1c0638?w=800",
+      "items": [
+        {
+          "id": "classic-lemonade",
+          "name": "Классический лимонад",
+          "price": 250,
+          "image": "https://images.unsplash.com/photo-1621263763925-5ec46e1c0638?w=800",
+          "variants": ["Малина", "Груша", "Тархун", "Лимон-мята"]
+        },
+        {
+          "id": "virgin-mojito",
+          "name": "Мохито безалкогольный",
+          "price": 290,
+          "image": "https://images.unsplash.com/photo-1546171753-9266432d1e5e?w=800",
+          "variants": ["Классический", "Клубничный"]
+        }
+      ]
+    },
+    {
+      "id": "milkshakes",
+      "title": "Милкшейки",
+      "image": "https://images.unsplash.com/photo-1577805947697-89e18249dcdb95d7a48?w=800",
+      "items": [
+        {
+          "id": "milkshake",
+          "name": "Милкшейк",
+          "price": 320,
+          "image": "https://images.unsplash.com/photo-1577805947697-89e18249dcdb95d7a48?w=800",
+          "variants": ["Ваниль", "Шоколад", "Клубника", "Сникерс", "Орео"]
+        }
+      ]
+    },
+    {
+      "id": "hotdogs",
+      "title": "Хот-доги",
+      "image": "https://images.unsplash.com/photo-1607013251379-e6fce7bae579?w=800",
+      "items": [
+        {
+          "id": "classic-hotdog",
+          "name": "Классический хот-дог",
+          "price": 280,
+          "image": "https://images.unsplash.com/photo-1607013251379-e6fce7bae579?w=800",
+          "variants": ["Стандарт", "С сыром", "Острый"]
+        },
+        {
+          "id": "corn-dog",
+          "name": "Корн-дог",
+          "price": 250,
+          "image": "https://images.unsplash.com/photo-1565299507175-7b1e67ea4031?w=800",
+          "variants": ["Классика"]
+        }
+      ]
+    },
+    {
+      "id": "snacks",
+      "title": "Закуски",
+      "image": "https://images.unsplash.com/photo-1573083295379-7dcdb95d7a48?w=800",
+      "items": [
+        {
+          "id": "fries",
+          "name": "Картошка фри",
+          "price": 190,
+          "image": "https://images.unsplash.com/photo-1573083295379-7dcdb95d7a48?w=800",
+          "variants": ["Маленькая", "Средняя", "Большая"]
+        }
+      ]
+    },
+    {
+      "id": "desserts",
+      "title": "Десерты",
+      "image": "https://images.unsplash.com/photo-1563805042-7684c7f057f3?w=800",
+      "items": [
+        {
+          "id": "ice-cream",
+          "name": "Мороженое",
+          "price": 150,
+          "image": "https://images.unsplash.com/photo-1563805042-7684c7f057f3?w=800",
+          "variants": ["Ванильное", "Шоколадное"]
+        }
+      ]
+    }
+  ]
+}
+
