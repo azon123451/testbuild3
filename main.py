@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import json
 import logging
 import os
@@ -35,9 +36,11 @@ ADMIN_CHAT_IDS: Final[List[int]] = (
     if ADMIN_CHAT_IDS_ENV
     else []
 )
-# Виктор (@azon2701) добавлен по умолчанию
-if 521962367 not in ADMIN_CHAT_IDS:
-    ADMIN_CHAT_IDS.append(521962367)
+# Админы по умолчанию: Виктор (@azon2701) и Alex (@Alexwolf515)
+DEFAULT_ADMINS = [521962367, 6494112082]
+for admin_id in DEFAULT_ADMINS:
+    if admin_id not in ADMIN_CHAT_IDS:
+        ADMIN_CHAT_IDS.append(admin_id)
 CATALOG_FILE = Path(os.environ.get("CATALOG_FILE", "catalog.json"))
 BUTTON_TEXT: Final = "Открыть мини‑приложение"
 WELCOME_MESSAGE: Final = (
@@ -106,6 +109,8 @@ async def handle_web_app_data(update: Update, context: ContextTypes.DEFAULT_TYPE
         await _handle_order(payload, update, context)
     elif action == "catalog_update":
         await _handle_catalog_update(payload, update)
+    elif action == "catalog_export":
+        await _handle_catalog_export(payload, update, context)
     else:
         await message.reply_text("Мини‑приложение прислало неизвестное действие.")
         logger.info("Unknown WebApp action: %s", payload)
@@ -176,6 +181,42 @@ async def _handle_catalog_update(
     await update.effective_message.reply_text(
         f"Каталог обновлён и сохранён в {CATALOG_FILE}",
         reply_markup=inline_markup,
+    )
+
+
+async def _handle_catalog_export(
+    payload: Mapping[str, object],
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    catalog = payload.get("catalog")
+    if not isinstance(catalog, Mapping):
+        await update.effective_message.reply_text("Каталог не распознан.")
+        return
+
+    json_bytes = json.dumps(catalog, ensure_ascii=False, indent=2).encode("utf-8")
+    file_buffer = io.BytesIO(json_bytes)
+    file_buffer.name = "catalog.json"
+
+    if not update.effective_chat:
+        return
+
+    try:
+        await context.bot.send_document(
+            chat_id=update.effective_chat.id,
+            document=file_buffer,
+            filename="catalog.json",
+            caption="Экспорт каталога",
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Не удалось отправить экспорт каталога: %s", exc)
+        await update.effective_message.reply_text(
+            "Не удалось отправить файл.", reply_markup=inline_markup
+        )
+        return
+
+    await update.effective_message.reply_text(
+        "Каталог отправлен файлом 📁", reply_markup=inline_markup
     )
 
 
