@@ -26,7 +26,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN: Final = os.environ.get("8047115088:AAGnS5O4O5NzWz5c7BUgpI2LnkDq4XXbit4")
+BOT_TOKEN: Final = os.environ.get(
+    "TELEGRAM_BOT_TOKEN", "8047115088:AAGnS5O4O5NzWz5c7BUgpI2LnkDq4XXbit4"
+)
 BUTTON_TEXT: Final = "Старт"
 WELCOME_MESSAGE: Final = (
     "Привет! 👋\n"
@@ -64,10 +66,10 @@ async def on_button_press(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 def main() -> None:
     token = BOT_TOKEN
-    if token == "PASTE_YOUR_TOKEN_HERE":
+    if not token:
         raise RuntimeError(
             "Укажите токен бота: задайте переменную окружения TELEGRAM_BOT_TOKEN "
-            "или замените placeholder в BOT_TOKEN."
+            "или пропишите токен напрямую в BOT_TOKEN."
         )
 
     application = Application.builder().token(token).build()
