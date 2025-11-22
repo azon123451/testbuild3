@@ -29,8 +29,15 @@ WEBAPP_URL: Final = os.environ.get(
     "WEBAPP_URL",
     "https://azon123451.github.io/testbuild4/",  # GitHub Pages с mini app
 )
-ADMIN_CHAT_ID_RAW = os.environ.get("ADMIN_CHAT_ID")
-ADMIN_CHAT_ID: Final[int | None] = int(ADMIN_CHAT_ID_RAW) if ADMIN_CHAT_ID_RAW else None
+ADMIN_CHAT_IDS_ENV = os.environ.get("ADMIN_CHAT_IDS")
+ADMIN_CHAT_IDS: Final[List[int]] = (
+    [int(x) for x in ADMIN_CHAT_IDS_ENV.split(",") if x.strip()]
+    if ADMIN_CHAT_IDS_ENV
+    else []
+)
+# Виктор (@azon2701) добавлен по умолчанию
+if 521962367 not in ADMIN_CHAT_IDS:
+    ADMIN_CHAT_IDS.append(521962367)
 CATALOG_FILE = Path(os.environ.get("CATALOG_FILE", "catalog.json"))
 BUTTON_TEXT: Final = "Открыть мини‑приложение"
 WELCOME_MESSAGE: Final = (
@@ -131,15 +138,15 @@ async def _handle_order(
     ]
     summary = "\n".join(text_lines)
 
-    if ADMIN_CHAT_ID:
+    for admin_id in ADMIN_CHAT_IDS:
         try:
             await context.bot.send_message(
-                chat_id=ADMIN_CHAT_ID,
+                chat_id=admin_id,
                 text=summary,
                 parse_mode=ParseMode.HTML,
             )
         except Exception as exc:  # noqa: BLE001
-            logger.error("Не удалось отправить заказ админу: %s", exc)
+            logger.error("Не удалось отправить заказ админу %s: %s", admin_id, exc)
 
     await update.effective_message.reply_text(
         "Спасибо! Заказ получили и скоро свяжемся.",
